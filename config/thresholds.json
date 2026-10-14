@@ -1,0 +1,96 @@
+{
+  "system_metadata": {
+    "system_name": "Robotic Arm Joint Health Monitoring System",
+    "version": "1.0.0",
+    "disclaimer": "SYNTHETIC DEMONSTRATION ONLY: This software simulation is NOT a certified industrial safety controller (ISO 13849 / IEC 61508 / IEC 62061). Real-world machinery requires independently certified hardware interlocks, safety relays, and emergency stop systems."
+  },
+  "global_safety_thresholds": {
+    "temperature_celsius": {
+      "warning": 75.0,
+      "critical": 85.0,
+      "physical_min": -20.0,
+      "physical_max": 150.0,
+      "unit": "°C"
+    },
+    "vibration_rms_mm_s": {
+      "warning": 4.5,
+      "critical": 7.0,
+      "physical_min": 0.0,
+      "physical_max": 50.0,
+      "unit": "mm/s RMS"
+    },
+    "torque_nm_default": {
+      "warning": 180.0,
+      "critical": 220.0,
+      "physical_min": -400.0,
+      "physical_max": 400.0,
+      "unit": "Nm"
+    }
+  },
+  "joint_specific_thresholds": {
+    "joint_1": {
+      "name": "Base",
+      "torque_warning_nm": 170.0,
+      "torque_critical_nm": 210.0
+    },
+    "joint_2": {
+      "name": "Shoulder",
+      "torque_warning_nm": 260.0,
+      "torque_critical_nm": 320.0
+    },
+    "joint_3": {
+      "name": "Elbow",
+      "torque_warning_nm": 190.0,
+      "torque_critical_nm": 230.0
+    },
+    "joint_4": {
+      "name": "Wrist 1 (Pitch)",
+      "torque_warning_nm": 55.0,
+      "torque_critical_nm": 70.0
+    },
+    "joint_5": {
+      "name": "Wrist 2 (Yaw)",
+      "torque_warning_nm": 45.0,
+      "torque_critical_nm": 60.0
+    },
+    "joint_6": {
+      "name": "Wrist 3 (Roll)",
+      "torque_warning_nm": 35.0,
+      "torque_critical_nm": 45.0
+    }
+  },
+  "predictive_maintenance": {
+    "monitor_risk_threshold": 0.35,
+    "maintenance_risk_threshold": 0.70,
+    "feature_columns": [
+      "torque",
+      "temperature",
+      "vibration",
+      "operating_hours",
+      "maintenance_age_hours",
+      "previous_failure_count",
+      "sensor_quality"
+    ]
+  },
+  "maintenance_log_analysis": {
+    "monitor_concern_threshold": 0.30,
+    "maintenance_concern_threshold": 0.60,
+    "decay_rate_per_day": 0.05
+  },
+  "spoof_detection": {
+    "frozen_sensor_window_size": 5,
+    "frozen_sensor_std_threshold": 0.0001,
+    "max_torque_rate_of_change_nm_per_sample": 120.0,
+    "max_temperature_rate_of_change_c_per_sample": 12.0,
+    "max_vibration_rate_of_change_mm_s_per_sample": 4.5,
+    "cross_sensor_inconsistency_threshold": 3.0,
+    "suspicion_warning_threshold": 0.45,
+    "suspicion_critical_threshold": 0.85
+  },
+  "fail_safe_policy": {
+    "fail_safe_on_critical_missing": true,
+    "fail_safe_on_corrupt_data": true,
+    "fail_safe_on_critical_spoof": true,
+    "max_telemetry_age_seconds": 300
+  }
+}

@@ -1,0 +1,27 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Output and run logs
+logs/*.log
+!logs/.gitkeep
+outputs/*.csv
+outputs/*.json
+outputs/*.md
+!outputs/.gitkeep
+models/*.joblib
+!models/.gitkeep
+
+# IDE files
+.vscode/
+.idea/
+*.swp
