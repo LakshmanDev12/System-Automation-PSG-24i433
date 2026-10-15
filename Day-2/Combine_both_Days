@@ -1,0 +1,218 @@
+
+import ast
+import re
+import pandas as pd
+
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+
+LOG_FILE = "day1_log.txt"
+CSV_FILE = "data.csv"
+OUTPUT_FILE = "log_ml_comparison.csv"
+
+FEATURES = [
+    "temperature",
+    "pressure",
+    "vibration",
+    "rpm",
+    "current"
+]
+
+
+def load_training_data():
+    df = pd.read_csv(CSV_FILE)
+
+    required = FEATURES + ["state"]
+
+    if not all(column in df.columns for column in required):
+        raise ValueError(
+            "data.csv must contain: " + ", ".join(required)
+        )
+
+    for column in FEATURES:
+        df[column] = pd.to_numeric(
+            df[column], errors="coerce"
+        )
+
+    df["state"] = (
+        df["state"].astype("string").str.strip().str.upper()
+    )
+
+    df = df.dropna(subset=required)
+    df = df[df["state"].isin(["NORMAL", "WARNING", "UNSAFE"])]
+
+    if len(df) < 5 or df["state"].nunique() < 2:
+        raise ValueError(
+            "Training data needs at least 5 valid rows "
+            "and at least 2 different states."
+        )
+
+    return df
+
+
+def train_models(df):
+    X = df[FEATURES]
+    y = df["state"]
+
+    models = {
+        "Decision_Tree": DecisionTreeClassifier(
+            random_state=42
+        ),
+        "Random_Forest": RandomForestClassifier(
+            n_estimators=100,
+            random_state=42
+        ),
+        "Naive_Bayes": GaussianNB()
+    }
+
+    for model in models.values():
+        model.fit(X, y)
+
+    return models
+
+
+def read_log_file(rpm_fallback):
+    records = []
+
+    pattern = (
+        r"^\[(.*?)\]\s+SENSE:\s+(\{.*?\})"
+        r"\s+\|\s+THINK:\s+([A-Z_]+)"
+        r"\s+\|\s+ACT:\s+([A-Z_]+)"
+    )
+
+    with open(LOG_FILE, "r", encoding="utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
+            match = re.search(pattern, line)
+
+            if not match:
+                continue
+
+            timestamp = match.group(1)
+            sensors = ast.literal_eval(match.group(2))
+            think = match.group(3)
+            action = match.group(4)
+
+            record = {
+                "log_line": line_number,
+                "timestamp": timestamp,
+                "temperature": sensors.get("temperature"),
+                "pressure": sensors.get("pressure"),
+                "vibration": sensors.get("vibration"),
+                "current": sensors.get("current"),
+                "logged_think": think,
+                "logged_action": action
+            }
+
+            values = [
+                record["temperature"],
+                record["pressure"],
+                record["vibration"],
+                record["current"]
+            ]
+
+            if any(value is None for value in values):
+                record["logged_state"] = "SENSOR_DROPOUT"
+                record["rpm_used"] = None
+                record["rpm_assumed"] = False
+                record["Decision_Tree"] = "NOT_PREDICTED"
+                record["Random_Forest"] = "NOT_PREDICTED"
+                record["Naive_Bayes"] = "NOT_PREDICTED"
+                record["comparison"] = "SENSOR_DROPOUT"
+                records.append(record)
+                continue
+            if think == "NO_RULE_FIRED":
+                logged_state = "NORMAL"
+            elif think in [
+                "EXCESSIVE_VIBRATION",
+                "HIGH_TEMP",
+                "HIGH_PRESSURE"
+            ]:
+                logged_state = "WARNING"
+            else:
+                logged_state = "UNKNOWN"
+
+            record["logged_state"] = logged_state
+            record["rpm_used"] = rpm_fallback
+            record["rpm_assumed"] = True
+
+            records.append(record)
+
+    return records
+
+
+def compare_predictions():
+    df = load_training_data()
+    models = train_models(df)
+
+    rpm_fallback = float(df["rpm"].median())
+
+    records = read_log_file(rpm_fallback)
+
+    for record in records:
+        if record["logged_state"] == "SENSOR_DROPOUT":
+            continue
+
+        sample = pd.DataFrame([{
+            "temperature": record["temperature"],
+            "pressure": record["pressure"],
+            "vibration": record["vibration"],
+            "rpm": record["rpm_used"],
+            "current": record["current"]
+        }], columns=FEATURES)
+
+        predictions = []
+
+        for name, model in models.items():
+            prediction = model.predict(sample)[0]
+            record[name] = prediction
+            predictions.append(prediction)
+
+        majority = pd.Series(predictions).value_counts()
+
+        if len(majority) > 1 and majority.iloc[0] == majority.iloc[1]:
+            record["ml_majority"] = "DISAGREEMENT"
+        else:
+            record["ml_majority"] = majority.index[0]
+
+        if record["logged_state"] == "UNKNOWN":
+            record["comparison"] = "UNKNOWN_LOG_STATE"
+        elif record["ml_majority"] == "DISAGREEMENT":
+            record["comparison"] = "MODEL_DISAGREEMENT"
+        elif record["logged_state"] == record["ml_majority"]:
+            record["comparison"] = "MATCH"
+        else:
+            record["comparison"] = "DIFFERENT"
+
+    result = pd.DataFrame(records)
+    result.to_csv(OUTPUT_FILE, index=False)
+
+    print("Log entries:", len(result))
+    print("RPM used for comparison:", rpm_fallback)
+    print("RPM was estimated because it is missing in the log.")
+
+    print("\nComparison summary:")
+    print(result["comparison"].value_counts().to_string())
+
+    columns = [
+        "log_line",
+        "logged_think",
+        "logged_state",
+        "Decision_Tree",
+        "Random_Forest",
+        "Naive_Bayes",
+        "ml_majority",
+        "comparison"
+    ]
+
+    print("\nDetailed results:")
+    print(result[columns].to_string(index=False))
+
+    print("\nComparison saved to:", OUTPUT_FILE)
+
+
+if __name__ == "__main__":
+    try:
+        compare_predictions()
+    except (OSError, ValueError, KeyError, SyntaxError) as error:
+        print("Error:", error)

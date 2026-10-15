@@ -1,0 +1,69 @@
+import csv
+import random
+CSV_FILE = "data.csv"
+TOTAL_ROWS = 100
+def generate_sensor_data():
+    if random.random() < 0.08:
+        return {
+            "temperature": round(random.uniform(110, 150), 1),
+            "pressure": round(random.uniform(8, 12), 2),
+            "vibration": round(random.uniform(90, 150), 1),
+            "rpm": random.randint(2200, 3200),
+            "current": round(random.uniform(40, 60), 1)
+        }
+
+    return {
+        "temperature": round(random.uniform(50, 95), 1),
+        "pressure": round(random.uniform(1.5, 4.5), 2),
+        "vibration": round(random.uniform(10, 45), 1),
+        "rpm": random.randint(900, 1800),
+        "current": round(random.uniform(5, 18), 1)
+    }
+def determine_state(data):
+    if (
+        data["temperature"] > 110
+        or data["pressure"] > 8
+        or data["vibration"] > 90
+        or data["rpm"] > 2800
+        or data["current"] > 40
+        or (
+            data["temperature"] > 93
+            and data["current"] > 15
+        )
+    ):
+        return "UNSAFE"
+    if (
+        data["temperature"] > 85
+        or data["pressure"] > 4
+        or data["vibration"] > 40
+        or data["current"] > 15
+        or data["rpm"] > 2000
+        or data["rpm"] < 800
+    ):
+        return "WARNING"
+    return "NORMAL"
+def generate_csv():
+    with open(CSV_FILE, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerow([
+            "temperature",
+            "pressure",
+            "vibration",
+            "rpm",
+            "current",
+            "state"
+        ])
+        for i in range(TOTAL_ROWS):
+            data = generate_sensor_data()
+            state = determine_state(data)
+
+            writer.writerow([
+                data["temperature"],
+                data["pressure"],
+                data["vibration"],
+                data["rpm"],
+                data["current"],
+                state
+            ])
+if __name__ == "__main__":
+    generate_csv()
