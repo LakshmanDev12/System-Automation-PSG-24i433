@@ -104,7 +104,12 @@ robotic-arm-joint-health-monitoring/
 │   ├── architecture.md               # Detailed module interaction and design principles
 │   ├── decision_logic.md             # Thresholds, decision precedence, and worked examples
 │   ├── security_analysis.md          # Threat model, attack vectors, and fail-safe defenses
-│   └── report.md                     # Comprehensive technical engineering report
+│   ├── report.md                     # Comprehensive technical engineering report
+│   └── images/                       # Screenshots used in this README
+│       ├── 01_dataset_generation.png
+│       ├── 02_model_training.png
+│       ├── 03_operational_summary.png
+│       └── 04_pytest_results.png
 ├── pytest.ini                        # Pytest configuration
 ├── requirements.txt                  # Pinned Python package dependencies
 └── README.md                         # Project documentation
@@ -166,17 +171,35 @@ Generates historical training data (2,160 samples), snapshot telemetry (36 rows)
 python -m src.generate_dataset
 ```
 
+**Output:**
+
+![Dataset generation output](docs/images/01_dataset_generation.png)
+
+*Figure 1: Dataset generator creating the 2,160-row historical dataset, the 36-row current telemetry snapshot, 12 maintenance log lines and the 8-row spoofed sensor dataset.*
+
 ### Step 2: Train & Evaluate Predictive Maintenance Model
 Trains the Random Forest wear classifier using chronological time-aware splitting, addresses class imbalance, and serializes the model to `models/predictive_model.joblib`:
 ```bash
 python -m src.train_model
 ```
 
+**Output:**
+
+![Model training and evaluation output](docs/images/02_model_training.png)
+
+*Figure 2: Training on 1,728 samples and evaluation on 432 hold-out samples (Accuracy 0.9884, Precision 0.7333, Recall 0.9167, F1 0.8148, ROC-AUC 0.9970; TN=416, FP=4, FN=1, TP=11).*
+
 ### Step 3: Run the End-to-End Simulation
 Demonstrates the full monitoring pipeline across all six robotic arms, clearly exercising **all four permitted operational decisions**:
 ```bash
 python -m src.main --mode simulate
 ```
+
+**Output:**
+
+![Operational summary in simulation mode](docs/images/03_operational_summary.png)
+
+*Figure 3: Operational summary showing SAFE, MONITOR, SCHEDULE_MAINTENANCE and EMERGENCY_STOP decisions across the six arms, with the precedence EMERGENCY_STOP > SCHEDULE_MAINTENANCE > MONITOR > SAFE.*
 
 ### Step 4: Run Batch Analysis on Custom Files
 Analyze custom telemetry files and maintenance notes:
@@ -189,6 +212,12 @@ Execute the comprehensive test suite covering all 20 required scenarios:
 ```bash
 pytest -v
 ```
+
+**Output:**
+
+![Pytest results showing 22 passed](docs/images/04_pytest_results.png)
+
+*Figure 4: Verbose pytest run on Windows with Python 3.13.14 - all 22 tests passed in 1.33 seconds.*
 
 ---
 
@@ -233,6 +262,8 @@ Evaluated on 432 holdout samples using chronological time-aware splitting (posit
 | **F1-Score** | `81.48%` | Strong harmonic balance between precision and recall. |
 | **ROC-AUC** | `99.70%` | Outstanding discriminative ranking capability. |
 
+The training run that produced these metrics is shown in [Figure 2](#step-2-train--evaluate-predictive-maintenance-model).
+
 ---
 
 ## 9. Understanding Generated Output Artifacts
@@ -256,7 +287,7 @@ The project includes 22 automated test cases in `tests/`:
 ```bash
 pytest -v
 ```
-All 22 tests pass in ~2.2 seconds:
+All 22 tests pass in about 1-2 seconds (see [Figure 4](#step-5-run-automated-tests)):
 - Normal telemetry produces `SAFE`.
 - Critical torque, temperature, and vibration immediately trigger `EMERGENCY_STOP`.
 - Emergency stop cannot be overridden by low ML risk.
