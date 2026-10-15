@@ -173,7 +173,7 @@ python -m src.generate_dataset
 
 **Output:**
 
-![Dataset generation output](docs/images/01_dataset_generation.png)
+![Dataset generation output](01_dataset_generation.png)
 
 *Figure 1: Dataset generator creating the 2,160-row historical dataset, the 36-row current telemetry snapshot, 12 maintenance log lines and the 8-row spoofed sensor dataset.*
 
@@ -185,7 +185,7 @@ python -m src.train_model
 
 **Output:**
 
-![Model training and evaluation output](docs/images/02_model_training.png)
+![Model training and evaluation output](02_model_training.png)
 
 *Figure 2: Training on 1,728 samples and evaluation on 432 hold-out samples (Accuracy 0.9884, Precision 0.7333, Recall 0.9167, F1 0.8148, ROC-AUC 0.9970; TN=416, FP=4, FN=1, TP=11).*
 
@@ -197,7 +197,7 @@ python -m src.main --mode simulate
 
 **Output:**
 
-![Operational summary in simulation mode](docs/images/03_operational_summary.png)
+![Operational summary in simulation mode](03_operational_summary.png)
 
 *Figure 3: Operational summary showing SAFE, MONITOR, SCHEDULE_MAINTENANCE and EMERGENCY_STOP decisions across the six arms, with the precedence EMERGENCY_STOP > SCHEDULE_MAINTENANCE > MONITOR > SAFE.*
 
@@ -215,7 +215,7 @@ pytest -v
 
 **Output:**
 
-![Pytest results showing 22 passed](docs/images/04_pytest_results.png)
+![Pytest results showing 22 passed](04_pytest_results.png)
 
 *Figure 4: Verbose pytest run on Windows with Python 3.13.14 - all 22 tests passed in 1.33 seconds.*
 
